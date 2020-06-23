@@ -1,0 +1,31 @@
+
+FROM golang:1.14 as builder
+
+ENV APP_USER app
+ENV APP_HOME /go/src/helloworld
+
+RUN groupadd $APP_USER && useradd -m -g $APP_USER -l $APP_USER
+RUN mkdir -p $APP_HOME
+
+WORKDIR $APP_HOME
+USER $APP_USER
+ADD . .
+
+RUN go mod download
+RUN go mod verify
+RUN go build ./cmd/main.go -o  helloworld-server
+
+FROM alpine:3.7
+
+ENV APP_USER app
+ENV APP_HOME /go/src/helloworld
+
+RUN groupadd $APP_USER && useradd -m -g $APP_USER -l $APP_USER
+RUN mkdir -p $APP_HOME
+WORKDIR $APP_HOME
+
+COPY --chown=0:0 --from=builder $APP_HOME/hellworld-server $APP_HOME
+
+EXPOSE 10000
+USER $APP_USER
+CMD ["./helloworld-server"]
